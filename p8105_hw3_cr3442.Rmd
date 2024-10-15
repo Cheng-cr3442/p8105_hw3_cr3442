@@ -52,7 +52,6 @@ merged_data <- inner_join(cleaned_demographics, accelerometer, by = "SEQN")
 
 # Check the merged data
 head(merged_data)
-colnames(merged_data)
 
 ```
 Next, let’s summarize the data.
@@ -72,17 +71,16 @@ Then visualize the data.
 
 ```{r visualize_2}
 
-# Install and load the ggplot2 package
-if (!require("ggplot2")) install.packages("ggplot2")
-library(ggplot2)
-
-# Draw the age distribution graph
+# Draw the age distribution graph with clear gender labels
 ggplot(merged_data, aes(x = age, fill = as.factor(sex))) +
   geom_histogram(bins = 30, alpha = 0.6, position = "identity") +
   facet_wrap(~ education) +
   labs(title = "Age Distribution by Gender and Education Level",
-       x = "Age", y = "Count", fill = "Sex") +
+       x = "Age", y = "Count", fill = "Gender") +
+  scale_fill_manual(values = c("1" = "blue", "2" = "red"),
+                    labels = c("Male", "Female")) +
   theme_minimal()
+
 ```
 
 Analysis:
@@ -110,7 +108,6 @@ total_activity <- merged_data %>%
   ungroup()
 
 
-head(total_activity)
 ```
 
 Then we will plot a scatter plot of each participant's total activity versus age, distinguishing between gender and education level.
@@ -123,8 +120,10 @@ ggplot(total_activity, aes(x = age, y = total_activity, color = as.factor(sex)))
   geom_smooth(method = "loess", se = FALSE) +
   facet_wrap(~ education) +
   labs(title = "Total Activity vs Age by Gender and Education Level",
-       x = "Age", y = "Total Activity", color = "Sex") +
+       x = "Age", y = "Total Activity", color = "Gender") +
+  scale_color_manual(values = c("1" = "blue", "2" = "red"), labels = c("Male", "Female")) +
   theme_minimal()
+
 ```
 
 Analysis: Gender and education differences do not appear to be significant.
@@ -262,7 +261,14 @@ ggplot(median_ride_duration, aes(x = day_of_week, y = median_duration, fill = mo
   theme_minimal()
 ```
 
-Finally, Draw a chart to show the impact of month, member status and vehicle type on the distribution of riding time in the 2024 data.
+Analysis:
+For 2020:
+July rides were significantly longer than January, especially on weekends (Saturday and Sunday). This may reflect the increase in cycling in the summer months (July), when cyclists may choose to go outdoors more often. July rides peaked from Friday to Sunday, especially on Saturday and Sunday, where the median ride time exceeded 15 minutes, indicating that more people may use their weekends for longer rides. January rides were relatively short and less variable, indicating that the cold weather kept people from going out to ride, especially in 2020.
+For 2024:
+Compared to 2020, the overall ride time in 2024 was lower. Both January and July had relatively low peak ride times. However, the difference between January and July was not as significant in 2024 as in 2020. Although July ride time was still slightly higher than January, the difference between the two was smaller. Moreover, in 2024, the ride time from Friday to Sunday tended to be stable and decreased compared to 2020.
+
+
+Finally, Let us draw a chart to show the impact of month, member status and vehicle type on the distribution of riding time in the 2024 data.
 
 ```{r distribution_3} 
 # Filter data of 2024
@@ -279,3 +285,10 @@ ggplot(data_2024, aes(x = duration_minutes, fill = interaction(member_casual, ri
   xlim(0, 240) 
 ```
 
+Analysis:
+
+Most of the rides are short, concentrated between 0 and 50 minutes, while longer rides (over 100 minutes) are very rare. This right-skewed distribution pattern is consistent in two months (January and July), with a clear peak, showing that most rides are concentrated in the shorter range.
+
+The distribution pattern of classic bikes and electric bikes is similar. Although the specific differences are not big, in general, the riding time of electric bikes (especially members) is slightly longer. This may be because electric bikes are more labor-saving. If I were in the same situation, I would also prefer electric bikes.
+
+Non-members ride slightly longer than members, which may be related to the fact that non-members tend to use rental services for longer sightseeing activities, while members may mainly use them for short-distance commuting, and non-members need to ride for a long time to make their investment back. The use of electric bicycles is more obvious among members, especially in shorter rides, which may be due to the fact that electric bicycles are more efficient in daily commuting.
