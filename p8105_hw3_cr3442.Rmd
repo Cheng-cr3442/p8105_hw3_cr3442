@@ -1,0 +1,250 @@
+---
+title: "p8105_hw3_cr3442"
+author: "Cheng Rao"
+date: "2024-10-15"
+output: html_document
+---
+
+title: "p8105_hw3_cr3442"
+author: "Cheng Rao"
+date: "2024-10-15"
+output: github_document
+---
+
+---
+title: "p8105_hw3_cr3442"
+author: "Cheng Rao"
+date: "2024-10-15"
+output: github_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+First of all, let me explain why I did not submit multiple versions of the assignment and did not reflect my modification process. It is like this. I had completed part of my assignment before this week, but did not commit or push. Last Saturday, my original computer broke down. I tried to fix the computer during the weekend but failed. For this reason, I used my classmate's computer to complete this week's homework, so I did not submit the previous modification process (because I can't use icloud). And I feel that I can't submit my code through the push method that comes with R studio, but need to submit it by manually adding it on github. I am very sorry for the trouble caused to you in correcting your homework.
+
+# Problem 2
+
+```{r}
+library(tidyverse)
+library(readr)
+```
+
+To solve this problem, first let us load the two required datasets, and check them to make sure they are OK.
+
+```{r load}
+
+getwd()
+demographics <- read_csv("/Users/raocheng/Desktop/p8105_hw3_cr3442/data/demographics.csv")
+accelerometer <- read_csv("/Users/raocheng/Desktop/p8105_hw3_cr3442/data/accelerometer.csv")
+
+# Preview the first few rows of each dataset
+head(demographics)
+head(accelerometer)
+```
+
+Because the demographics data does not meet the requirements for subsequent operations, we perform some cleaning.
+
+```{r clean}
+
+# Omit the first four rows of data because of the column of age
+cleaned_demographics <- read_csv("/Users/raocheng/Desktop/p8105_hw3_cr3442/data/demographics.csv", skip = 4)
+
+head(cleaned_demographics)
+str(cleaned_demographics)
+
+```
+
+Next, it is time to merge these data.
+
+```{r merge}
+
+merged_data <- inner_join(cleaned_demographics, accelerometer, by = "SEQN")
+
+# Check the merged data
+head(merged_data)
+colnames(merged_data)
+
+```
+Next, let’s summarize the data.
+
+```{r summary}
+
+# Count the number of people by education level and gender
+summary_table <- merged_data %>%
+  group_by(education, sex) %>%
+  summarize(count = n(), .groups = 'drop')
+
+
+print(summary_table)
+```
+
+Then visualize the data.
+
+```{r visualize}
+
+# Install and load the ggplot2 package
+if (!require("ggplot2")) install.packages("ggplot2")
+library(ggplot2)
+
+# Draw the age distribution graph
+ggplot(merged_data, aes(x = age, fill = as.factor(sex))) +
+  geom_histogram(bins = 30, alpha = 0.6, position = "identity") +
+  facet_wrap(~ education) +
+  labs(title = "Age Distribution by Gender and Education Level",
+       x = "Age", y = "Count", fill = "Sex") +
+  theme_minimal()
+```
+
+The accelerometer data contains minute-by-minute activity data for 24 hours, and we need to summarize the activity for each participant.
+
+```{r total_act}
+
+# Summarize the total activity for each participant
+total_activity <- merged_data %>%
+  rowwise() %>%
+  mutate(total_activity = sum(c_across(starts_with("MIMS")), na.rm = TRUE)) %>%
+  ungroup()
+
+
+head(total_activity)
+```
+
+Then we will plot a scatter plot of each participant's total activity versus age, distinguishing between gender and education level.
+
+```{r ggplot}
+
+# Plot the relationship between total activity and age
+ggplot(total_activity, aes(x = age, y = total_activity, color = as.factor(sex))) +
+  geom_point(alpha = 0.6) +
+  geom_smooth(method = "loess", se = FALSE) +
+  facet_wrap(~ education) +
+  labs(title = "Total Activity vs Age by Gender and Education Level",
+       x = "Age", y = "Total Activity", color = "Sex") +
+  theme_minimal()
+```
+
+Finally, create a three-panel plot showing the 24-hour activity time trajectory for each education level, color-coded by gender.
+
+```{r covert}
+
+# Convert activity data for each minute within 24 hours to long format
+activity_long <- merged_data %>%
+  pivot_longer(cols = starts_with("min"), names_to = "minute", values_to = "activity") %>%
+  mutate(minute = as.numeric(gsub("min", "", minute)))
+
+# Draw 24-hour activity trajectory
+ggplot(activity_long, aes(x = minute, y = activity, color = sex)) +
+  geom_smooth(se = FALSE) +
+  facet_wrap(~ education) +
+  labs(title = "24-hour activity time trajectory by education level",
+       x = "Minutes of the Day", y = "Activity Level", color = "gender") +
+  theme_minimal()
+
+```
+
+
+# Problem 3
+
+```{r}
+library(tidyverse)
+library(lubridate)
+```
+
+```{r}
+setwd("/Users/raocheng/Desktop/p8105_hw3_cr3442")
+getwd()
+
+Jan_2020_Citi <- read_csv("/Users/raocheng/Desktop/p8105_hw3_cr3442/data/Jan_2020_Citi.csv")
+Jan_2024_Citi <- read_csv("/Users/raocheng/Desktop/p8105_hw3_cr3442/data/Jan_2024_Citi.csv")
+July_2020_Citi <- read_csv("/Users/raocheng/Desktop/p8105_hw3_cr3442/data/July_2020_Citi.csv")
+July_2024_Citi <- read_csv("/Users/raocheng/Desktop/p8105_hw3_cr3442/data/July_2024_Citi.csv")
+
+# Preview the first few rows of each dataset
+head(Jan_2020_Citi)
+head(Jan_2024_Citi)
+head(July_2020_Citi)
+head(July_2024_Citi)
+```
+```{r}
+# Merge all datasets
+citi_bike_data <- bind_rows(
+  Jan_2020_Citi %>% mutate(year = 2020, month = "January"),
+  July_2020_Citi %>% mutate(year = 2020, month = "July"),
+  Jan_2024_Citi %>% mutate(year = 2024, month = "January"),
+  July_2024_Citi %>% mutate(year = 2024, month = "July")
+)
+
+head(citi_bike_data)
+```
+
+```{r}
+# Clean and organize data
+citi_bike_data_cleaned <- citi_bike_data %>%
+  mutate(day_of_week = weekdays,  # Use existing weekday column
+         duration_minutes = duration,  
+         member_casual = ifelse(member_casual == "member", "Member", "Casual")) %>%
+  drop_na()  
+
+# check the cleaned data
+head(citi_bike_data_cleaned)
+```
+
+```{r}
+
+ride_summary <- citi_bike_data_cleaned %>%
+  group_by(year, month, member_casual) %>%
+  summarize(total_rides = n(), .groups = 'drop')
+
+# Generate tabular output
+ride_summary_table <- ride_summary %>%
+  pivot_wider(names_from = member_casual, values_from = total_rides, values_fill = 0)
+
+print(ride_summary_table)
+```
+
+```{r}
+# Filter out data from July 2024
+july_2024_data <- citi_bike_data_cleaned %>%
+  filter(year == 2024, month == "July")
+
+# Find the most popular starting stations
+top_start_stations <- july_2024_data %>%
+  group_by(start_station_name) %>%
+  summarize(total_rides = n(), .groups = 'drop') %>%
+  arrange(desc(total_rides)) %>%
+  slice_head(n = 5)
+
+print(top_start_stations)
+```
+
+```{r}
+# Calculate the median riding time for each group
+median_ride_duration <- citi_bike_data_cleaned %>%
+  group_by(year, month, day_of_week) %>%
+  summarize(median_duration = median(duration_minutes), .groups = 'drop')
+
+# Draw a chart
+ggplot(median_ride_duration, aes(x = day_of_week, y = median_duration, fill = month)) +
+  geom_bar(stat = "identity", position = "dodge") +
+  facet_wrap(~ year) +
+  labs(title = "Median cycling duration by week, month, and year",
+       x = "week", y = "Median riding time (minutes)", fill = "month") +
+  theme_minimal()
+```
+
+```{r}
+# Filter data of 2024
+data_2024 <- citi_bike_data_cleaned %>%
+  filter(year == 2024)
+
+# Plotting the distribution of riding time
+ggplot(data_2024, aes(x = duration_minutes, fill = interaction(member_casual, rideable_type))) +
+  geom_density(alpha = 0.6) +
+  facet_wrap(~ month) +
+  labs(title = "Distribution of riding time in 2024 (by month, membership status and vehicle type)",
+       x = "Cycling time (minutes)", y = "density", fill = "membership status and vehicle type") +
+  theme_minimal() +
+  xlim(0, 240) 
+```
