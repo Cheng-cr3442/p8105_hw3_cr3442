@@ -2,21 +2,9 @@
 title: "p8105_hw3_cr3442"
 author: "Cheng Rao"
 date: "2024-10-15"
-output: html_document
----
-
-title: "p8105_hw3_cr3442"
-author: "Cheng Rao"
-date: "2024-10-15"
 output: github_document
 ---
 
----
-title: "p8105_hw3_cr3442"
-author: "Cheng Rao"
-date: "2024-10-15"
-output: github_document
----
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
@@ -33,7 +21,7 @@ library(readr)
 
 To solve this problem, first let us load the two required datasets, and check them to make sure they are OK.
 
-```{r load}
+```{r load_2}
 
 getwd()
 demographics <- read_csv("/Users/raocheng/Desktop/p8105_hw3_cr3442/data/demographics.csv")
@@ -46,7 +34,7 @@ head(accelerometer)
 
 Because the demographics data does not meet the requirements for subsequent operations, we perform some cleaning.
 
-```{r clean}
+```{r clean_2}
 
 # Omit the first four rows of data because of the column of age
 cleaned_demographics <- read_csv("/Users/raocheng/Desktop/p8105_hw3_cr3442/data/demographics.csv", skip = 4)
@@ -58,7 +46,7 @@ str(cleaned_demographics)
 
 Next, it is time to merge these data.
 
-```{r merge}
+```{r merge_2}
 
 merged_data <- inner_join(cleaned_demographics, accelerometer, by = "SEQN")
 
@@ -69,7 +57,7 @@ colnames(merged_data)
 ```
 Next, let’s summarize the data.
 
-```{r summary}
+```{r summary_2}
 
 # Count the number of people by education level and gender
 summary_table <- merged_data %>%
@@ -82,7 +70,7 @@ print(summary_table)
 
 Then visualize the data.
 
-```{r visualize}
+```{r visualize_2}
 
 # Install and load the ggplot2 package
 if (!require("ggplot2")) install.packages("ggplot2")
@@ -99,7 +87,7 @@ ggplot(merged_data, aes(x = age, fill = as.factor(sex))) +
 
 The accelerometer data contains minute-by-minute activity data for 24 hours, and we need to summarize the activity for each participant.
 
-```{r total_act}
+```{r total_act_2}
 
 # Summarize the total activity for each participant
 total_activity <- merged_data %>%
@@ -113,7 +101,7 @@ head(total_activity)
 
 Then we will plot a scatter plot of each participant's total activity versus age, distinguishing between gender and education level.
 
-```{r ggplot}
+```{r ggplot_2}
 
 # Plot the relationship between total activity and age
 ggplot(total_activity, aes(x = age, y = total_activity, color = as.factor(sex))) +
@@ -127,7 +115,7 @@ ggplot(total_activity, aes(x = age, y = total_activity, color = as.factor(sex)))
 
 Finally, create a three-panel plot showing the 24-hour activity time trajectory for each education level, color-coded by gender.
 
-```{r covert}
+```{r covert_2}
 
 # Convert activity data for each minute within 24 hours to long format
 activity_long <- merged_data %>%
@@ -152,7 +140,10 @@ library(tidyverse)
 library(lubridate)
 ```
 
-```{r}
+To solve this problem, first let us load the four required datasets, and check them to make sure they are OK.
+
+```{r load_3}
+
 setwd("/Users/raocheng/Desktop/p8105_hw3_cr3442")
 getwd()
 
@@ -167,7 +158,10 @@ head(Jan_2024_Citi)
 head(July_2020_Citi)
 head(July_2024_Citi)
 ```
-```{r}
+
+Then merge them.
+
+```{r merge_3}
 # Merge all datasets
 citi_bike_data <- bind_rows(
   Jan_2020_Citi %>% mutate(year = 2020, month = "January"),
@@ -179,7 +173,9 @@ citi_bike_data <- bind_rows(
 head(citi_bike_data)
 ```
 
-```{r}
+Next, we need to clean and organize the data.
+
+```{r clean_3}
 # Clean and organize data
 citi_bike_data_cleaned <- citi_bike_data %>%
   mutate(day_of_week = weekdays,  # Use existing weekday column
@@ -191,7 +187,9 @@ citi_bike_data_cleaned <- citi_bike_data %>%
 head(citi_bike_data_cleaned)
 ```
 
-```{r}
+Generate a summary table showing the total number of rides for members and non-members per month of each year.
+
+```{r summary_3}
 
 ride_summary <- citi_bike_data_cleaned %>%
   group_by(year, month, member_casual) %>%
@@ -204,7 +202,9 @@ ride_summary_table <- ride_summary %>%
 print(ride_summary_table)
 ```
 
-```{r}
+Find the top 5 most popular starting stations for July 2024 and show the number of rides from each station.
+
+```{r station_3}
 # Filter out data from July 2024
 july_2024_data <- citi_bike_data_cleaned %>%
   filter(year == 2024, month == "July")
@@ -219,7 +219,9 @@ top_start_stations <- july_2024_data %>%
 print(top_start_stations)
 ```
 
-```{r}
+Next, plot a graph to see how the median duration of a ride changes by week, month, and year.
+
+```{r median_3}
 # Calculate the median riding time for each group
 median_ride_duration <- citi_bike_data_cleaned %>%
   group_by(year, month, day_of_week) %>%
@@ -233,6 +235,8 @@ ggplot(median_ride_duration, aes(x = day_of_week, y = median_duration, fill = mo
        x = "week", y = "Median riding time (minutes)", fill = "month") +
   theme_minimal()
 ```
+
+Finally, Draw a chart to show the impact of month, member status and vehicle type on the distribution of riding time in the 2024 data.
 
 ```{r}
 # Filter data of 2024
@@ -248,3 +252,4 @@ ggplot(data_2024, aes(x = duration_minutes, fill = interaction(member_casual, ri
   theme_minimal() +
   xlim(0, 240) 
 ```
+
