@@ -12,6 +12,163 @@ knitr::opts_chunk$set(echo = TRUE)
 
 First of all, let me explain why I did not submit multiple versions of the assignment and did not reflect my modification process. It is like this. I had completed part of my assignment before this week, but did not commit or push. Last Saturday, my original computer broke down. I tried to fix the computer during the weekend but failed. For this reason, I used my classmate's computer to complete this week's homework, so I did not submit the previous modification process (because I can't use icloud). And I feel that I can't submit my code through the push method that comes with R studio, but need to submit it by manually adding it on github. I am very sorry for the trouble caused to you in correcting your homework.
 
+# Problem 1
+
+First, we use the code on the website to import the data, which includes the IDs of all weather stations in New York State and the data in them.
+
+```{r pull_data, echo=FALSE, results="hide", message=FALSE, warning=FALSE}
+
+library(dplyr)
+library(rnoaa)
+
+# Get a list of all NY station IDs
+stations <- ghcnd_stations()
+nystationids <-  stations %>% 
+  filter(state == "NY") %>% 
+  distinct(id)
+
+# Pull the desired weather data for all of these stations
+nydat <- meteo_pull_monitors(nystationids$id, 
+                             date_min = "1981-01-01", 
+                             date_max = "2010-12-31", 
+                             var = c("PRCP", "SNOW", "SNWD", "TMAX", "TMIN"))
+
+# Save the resulting data
+save(nystationids, nydat, file = "nynoaadat.RData")
+
+```
+
+Then we load the data, describe the size and structure of the dataset, and find out the missing values.
+ 
+```{r load_1}
+
+load("nynoaadat.RData")
+
+nydat %>% 
+  glimpse()
+
+dim(nydat)
+
+# Check the number of missing values
+nydat %>% 
+  summarise(across(everything(), ~sum(is.na(.))))
+
+```
+
+We then create separate "year", "month", and "day" variables. We make sure the temperature, precipitation, and snowfall values are in reasonable units, and finally find the most common snowfall values.
+
+```{r temperature_1}
+library(lubridate)
+
+nydat <- nydat %>%
+  mutate(
+    year = year(date),
+    month = month(date),
+    day = day(date),
+    tmax = tmax / 10,    
+    tmin = tmin / 10   # Convert to Celsius
+  )
+
+# Find the most common snowfall values
+nydat %>%
+  count(snow) %>%
+  arrange(desc(n))
+```
+Next we will plot the average maximum temperature for each weather station in January and July of each year.
+
+```{r plot_temperature_1}
+library(ggplot2)
+
+# Average maximum temperature
+avg_temp_jan_jul <- nydat %>%
+  filter(month %in% c(1, 7)) %>%
+  group_by(id, year, month) %>%
+  summarise(avg_tmax = mean(tmax, na.rm = TRUE)) %>%
+  ungroup()
+
+# Draw a two-panel plot
+
+avg_temp_jan_jul_clean <- avg_temp_jan_jul %>%
+  filter(id %in% unique(id)[1:10]) 
+
+ggplot(avg_temp_jan_jul_clean, aes(x = year, y = avg_tmax, color = id)) +
+  geom_line() +
+  facet_wrap(~month, ncol = 1, labeller = labeller(month = c(`1` = "January", `7` = "July"))) +
+  labs(
+    title = "Average maximum temperatures in January and July for each weather station",
+    x = "Year",
+    y = "Average maximum temperature (°C)"
+  ) +
+  theme_minimal()
+
+
+
+```
+Then We plotted a two-panel graph of Tmax vs. Tmin and snowfall distribution.
+
+```{r }
+#  T max vs T min
+ggplot(nydat, aes(x = tmin, y = tmax)) +
+  geom_hex(bins = 50) +
+  labs(
+    title = "Tmax vs Tmin",
+    x = "T min (°C)",
+    y = "T max (°C)"
+  ) +
+  theme_minimal()
+
+# Distribution of snowfall values greater than 0 and less than 100
+
+snowfall_distribution <- nydat %>%
+  filter(snow > 0, snow < 100) %>%
+  group_by(year)
+
+ggplot(snowfall_distribution, aes(x = snow)) +
+  geom_histogram(binwidth = 5, fill = "blue", alpha = 0.7) +
+  facet_wrap(~year) +
+  labs(
+    title = "Distribution of snowfall values (greater than 0 and less than 100)",
+    x = "Snowfall (mm)",
+    y = "frequency"
+  ) +
+  theme_minimal()
+
+```
+
+# ANSWER
+
+1.Description:
+
+`id`: Weather station ID
+
+`date`: Date of observation
+
+`prcp`: Precipitation (tenths of mm)
+
+`snow`: Snowfall (mm)
+
+`snwd`: Snow depth (mm)
+
+`tmax`: Maximum temperature (tenths of degrees C)
+
+`tmin`: Minimum temperature (tenths of degrees C)
+
+2.In data cleaning, we did the following:
+
+Creating year, month, and day variables: We used the mutate() function to extract the year, month, and day from the date variable. 
+
+Unit conversion: We converted tmax and tmin from 1/10 degrees Celsius to degrees Celsius.
+
+The most common snowfall value: We counted the frequency of snowfall using count(snow) and found that 0 is the most common value. This may be because there is no snowfall in most cases, especially in summer and autumn.
+
+3.I did not observe any data about the average maximum temperature of each weather station in January and July each year. I only had the names of the weather stations. Even if I took the data of several weather stations, I did not get any data.
+
+4.From the figure, we can see that there is an obvious positive correlation between tmax and tmin, which is manifested by the fact that most of the data points are distributed along a positive slope. This means that when the minimum temperature is higher, the maximum temperature is usually also higher.
+
+Many years have snowfall amounts concentrated in a smaller range (0-50 mm), meaning that most observed snowfall events are light to moderate.
+However, some years have a histogram with higher snowfall amounts (e.g., 50-100 mm), which may mean that more severe snowfall events occurred in these years.
+
+
 # Problem 2
 
 ```{r}
